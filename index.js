@@ -86,6 +86,7 @@ con.connect(function (err) {
         }
       } else {
         res.send("email and firstname mandatory");
+
       }
     });
   });
@@ -118,39 +119,28 @@ con.connect(function (err) {
     let Startdate = req.body.Startdate;
     let Enddate = req.body.Enddate;
     let Createdon = req.body.Createdon;
+    let sqlselect = "select tc.txtCampaignName,tp.txtProducttype from tblcampaign tc join tblproducttype tp on tc.refProducttype=tp.id where tc.txtCampaignName ='" + Campaignname + "'";
     let sql = "insert into tblcampaign(txtCampaignName,refProducttype,dtStartdate,dtEnddate,dtCreatedOn) values('" + Campaignname + "','" + Producttype + "','" + Startdate + "','" + Enddate + "','" + Createdon + "');";
 
-    con.query(sql, function (err, result) {
+    con.query(sqlselect, function (err, result) {
       if (err) throw err;
-      console.log("Result: " + JSON.stringify(result));
-      if (Campaignname == "") {
-        res.send("Campaignname is mandatory")
-        return
-      }
-      if (Producttype == "") {
-        res.send("producttype is mandatory")
-        return
-      }
-      if (Startdate == "") {
-        res.send('Startdate is mandatory')
-        return
-      }
-      if (Enddate == "") {
-        res.send('enddate is mandatory')
-        return
-      }
-      if (Createdon == "") {
-        res.send("createdon is mandatory")
-        return
-      }
-      if (result != "") {
-        res.send("Profile already exists!")
-        return
-      }
-      else {
-        res.send("Campaign inserted Successfully!")
+      console.log("Result" + result);
+      if (Campaignname !== "") {
+        if (result != "") {
+          res.send("Campaignname already exist" + JSON.stringify(result));
+        }
+        else {
+          con.query(sql, function (err, result1) {
+            if (err) throw err;
+            console.log("inserted" + result1);
+            res.send("New Campaign added ")
+          });
 
+        }
+      } else {
+        res.send("Campaign Name is Mandatory")
       }
+
     })
   })
 
@@ -227,14 +217,14 @@ con.connect(function (err) {
     let sql = "select txtSuffix,txtFirstName,txtLastName,txtEmail from tblusers where id  = '" + id + "';"
     con.query(sql, function (err, result) {
       if (err) throw err;
-      console.log("Profile  displayed")
-    
+      console.log("Lead  displayed")
+
       if (result != "") {
-        res.send("Profile Information " + JSON.stringify(result))
+        res.send("Lead Information " + JSON.stringify(result))
         return
       }
       else {
-        res.send("Profile does not exist")
+        res.send("Lead does not exist")
         return
       }
     });
@@ -244,56 +234,171 @@ con.connect(function (err) {
   app.post("/resendotpapi", (req, res) => {
     let otp = req.body.otp;
     let phonenumber = req.body.phonenumber
-    let sql ="select txtPhonenumber,txtOTP from tblusers where txtPhonenumber='"+phonenumber+"'";
-    if (phonenumber == ""){
+    let sql = "select txtPhonenumber,txtOTP from tblusers where txtPhonenumber='" + phonenumber + "'";
+    if (phonenumber == "") {
       res.send("phonenumber is mandatory");
       return res
     }
-    if (otp == ""){
+    if (otp == "") {
       res.send("otp is mandatory");
       return res
     }
     con.query(sql, function (err, result) {
       if (err) throw err;
-      console.log("Resend: " + result); 
-      
+      console.log("Resend: " + result);
+
+    });
+  });
+
+
+  app.post("/insertsinglelead", (req, res) => {
+    let FirstName = req.body.FirstName;
+    let LastName = req.body.LastName;
+    let email = req.body.email;
+    let Phone = req.body.Phone;
+    let sql = "select txtEmail from tblleads where txtEmail =  '" + email + "';"
+    let sql1 = "insert into tblleads (txtFirstName, txtLastName, txtEmail, txtPhone) values('" + FirstName + "', '" + LastName + "','" + email + "','" + Phone + "');"
+    if (FirstName == "") {
+      res.send("FirstName is empty")
+      return
+    }
+    if (LastName == "") {
+      res.send("LastName is empty")
+      return
+    }
+    if (email == "") {
+      res.send("email is empty")
+      return
+    }
+    if (Phone == "") {
+      res.send("Phone is empty")
+    }
+
+    con.query(sql, function (err, result) {
+      if (err) throw err;
+      console.log("Result = " + JSON.stringify(result))
+      if (result != "") {
+        res.send("Lead already exists!")
+        return
+      }
+      else {
+        con.query(sql1, function (err, result) {
+          if (err) throw err;
+          res.send("Lead Inserted!")
+          console.log("New user Lead details inserted")
+          return
+        });
+      }
+
+    });
+  });
+
+
+
+  app.post("/updatesingleprofileapi", (req, res) => {
+    let firstname = req.body.firstname;
+    let email = req.body.email;
+    let id = req.body.id;
+    let sql = "select id,txtFirstName,txtEmail from tblusers where txtEmail= '" + email + "'";
+    let sqlupdate = "update tblusers    set txtEmail='" + email + "'    where id='" + id + "'";
+    if (firstname == "") {
+      res.send("firstname is mandatory");
+      return res
+    }
+    if (email == "") {
+      res.send("email is mandatory");
+      return res
+    }
+    con.query(sql, function (err, result) {
+      if (err) throw err;
+      console.log(result);
+      if (result != "") {
+        res.send("already exist");
+      }
+    });
+    con.query(sqlupdate, function (err, result) {
+      if (err) throw err;
+      console.log("updated" + result);
+      res.send("updated")
+    });
+  })
+
+
+  app.post("/updatesinglelead", (req, res) => {
+    let firstname = req.body.firstname;
+    let email = req.body.email;
+    let id = req.body.id;
+    let sql = "select id,txtFirstName,txtEmail from tblleads where txtEmail= '" + email + "'";
+    let sqlupdate = "update tblleads   set txtEmail='" + email + "'    where id='" + id + "'";
+    if (firstname == "") {
+      res.send("firstname is mandatory");
+      return res
+    }
+    if (email == "") {
+      res.send("email is mandatory");
+      return res
+    }
+    con.query(sql, function (err, result) {
+      if (err) throw err;
+      console.log(result);
+      if (result != "") {
+        res.send("already exist");
+      }
+    });
+    con.query(sqlupdate, function (err, result) {
+      if (err) throw err;
+      console.log("updated" + result);
+      res.send("updated")
+    });
+  })
+//email&name
+  app.post("/updatesinglecampaign", (req, res) => {
+    let campname = req.body.campname;
+    //let email = req.body.email;
+    let id = req.body.id;
+    let sql = "select txtCampaignName  from tblcampaign where id= '" + id + "'";
+    let sqlupdate = "update tblcampaign  set txtCampaignName='" + campname + "'    where id='" + id + "'";
+    if (campname == "") {
+      res.send("campname is mandatory");
+      return res
+    }
+    
+    con.query(sql, function (err, result) {
+      if (err) throw err;
+      console.log(result);
+      if (result != "") {
+        res.send("already exist");
+      }
+    });
+    con.query(sqlupdate, function (err, result) {
+      if (err) throw err;
+      console.log("updated" + result);
+      res.send("updated")
+    });
+  })
+
+
+  app.post("/getsinglecampaign", (req, res) => {
+    let id = req.body.id;
+    let sql = "select tblcampaign.txtCampaignName,tblproducttype.txtProducttype from tblcampaign left join tblproducttype on tblcampaign.refProducttype =tblproducttype.id where tblcampaign.id = '" + id + "';"
+    con.query(sql, function (err, result) {
+      if (err) throw err;
+      console.log(result);
+      if (result !== '') {
+        res.send("Campaign Exist" +JSON.stringify(result))
+        return
+      }
+      else {
+        res.send(" Campaign does not Exist")
+        return
+      }
+  
     });
   });
 
 
   
 })
-
-// app.post("/insertsinglelead", (req, res) => {
-//   let FirstName = req.body.txtFirstName;
-//    let LastName = req.body.txtLastName;
-//    let CreatedBy = req.body.CreatedBy;
-//    let Phone = req.body.txtPhone;
-//    let Createdon = req.body.Createdon;
-//    let sql =
-//     con.query(sql, function (err, result) {
-//       if (err) throw err;
-//       console.log("Result: " + result);
-//       if (FirstName == "") {
-//         res.send("FirstName is mandatory")
-//       }
-//       if (LastName == "") {
-//         res.send("LastName is mandatory")
-//       }
-//       if (CreatedBy == "") {
-//         res.send("CreatedBy is mandatory")
-//       }
-//       if (Phone == "") {
-//         res.send("Phone is mandatory")
-//       }
-//       if (Createdon == "") {
-//         res.send("Createdon is mandatory")
-//       }
-//       else {
-//         res.send("Campaign Added Successfully")
-//       }
-//     })
-// })
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);
 });
