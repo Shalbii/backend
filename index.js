@@ -445,8 +445,10 @@ con.connect(function (err) {
     });
   });
 
+
   app.post("/Managerwiseprospectcount", (req, res) => {
-    let sql = "SELECT A.txtJobTitle Jobtitle, B.txtFirstName Name, count(E.txtConversionType) as Count FROM tbljobtitle A JOIN tblusers B ON A.id = B.refJobTitle JOIN tblleadcampaignmap C ON C.refCreatedBy = B.id JOIN   tblactivity D ON D.refMapid = C.id JOIN tblconversiontype E on E.id= D.refConversionStatus where txtJobTitle='%Manager%';";
+    let Jobrole = req.body.Jobrole;
+    let sql = "select A.txtJobTitle,B.txtFirstName,E.txtconversiontype,count(E.txtConversionType) count from tbljobtitle A join tblusers B on B.refJobTitle=A.id  join tblleadcampaignmap C on B.refCreatedBy=C.id join tblactivity D on D.refMapid=C.id join tblconversiontype E on D.refConversionStatus=E.id where txtJobTitle='" + Jobrole + "';"
     con.query(sql, function (err, result) {
       if (err) throw err;
       console.log(result);
@@ -473,90 +475,139 @@ con.connect(function (err) {
   });
 
 
-  app.post("/GetUserListWithFilter", (req, res) => {
-    let username = req.body.username;
-    let name = req.body.name;
+  app.post("/getuserlistwithfilter", (req, res) => {
 
-    let sql = "select * from tblusers where txtFirstName= '" + username + "';";
+    let value_filter = req.body.value_filter;
+    let filtername = req.body.filtername;
+    let sql = "select * from tblusers where " + value_filter + "='" + filtername + "' or " + value_filter + " like '" + filtername + "';";
     con.query(sql, function (err, result) {
       if (err) throw err;
-      console.log("Result: " + result);
-
-      if (username != "" || name != "") {
-        if (username != "" && name == "") {
-          if (result != "") {
-            res.send("success" + JSON.stringify(result));
-          }
-          else {
-            res.send("error");
-          }
-        }
-        if (username == "" && name != "") {
-          let sql1 = "select * from tblusers where txtFirstName like '" + name + "';";
-          con.query(sql1, function (err, result1) {
-            if (err) throw err;
-            console.log("Result: " + result1);
-            if (result1 != "") {
-              res.send("success" + JSON.stringify(result1));
-            }
-            else {
-              res.send("error");
-            }
-          });
-
-        }
-        if (username != "" & name != "") {
-          res.send("please use username or name");
-        }
-      }
-      else {
-        res.send("username or name is mandatory ");
-      }
-
-    });
-  });
-
-  app.post("/GetLeadListWithFilter", (req, res) => {
-    let username = req.body.username;
-    let name = req.body.name;
-
-    let sql = "select * from tblleads where txtFirstName= '" + username + "';";
-    con.query(sql, function (err, result) {
-      if (err) throw err;
-      console.log("Result: " + result);
-
-      if (username != "" || name != "") {
-        if (username != "" & name == "") {
-          if (result != "") {
-            res.send("success" + JSON.stringify(result));
-          }
-          else {
-            res.send("error");
-          }
-        }
-        if (username == "" & name != "") {
-          let sql1= "select * from tblleads where txtFirstName like '" + name + "';";
-          con.query(sql1, function (err, result1) {
-            if (err) throw err;
-            console.log("Result: " + result1);
-            if (result1 != "") {
-              res.send("success" + JSON.stringify(result1));
-            }
-            else {
-              res.send("error");
-            }
-          });
-
-        }
-        if (username != "" & name != "") {
-          res.send("please use username or name");
-        }
-      }
-
+      console.log("Result" + result);
+      res.send(result)
     })
-  });
+  })
 });
-  app.listen(port, () => {
-    console.log(`Example app listening on port ${port}`);
+
+
+app.post("/GetLeadListWithFilter", (req, res) => {
+  let username = req.body.username;
+  let name = req.body.name;
+
+  let sql = "select * from tblleads where txtFirstName= '" + username + "';";
+  con.query(sql, function (err, result) {
+    if (err) throw err;
+    console.log("Result: " + result);
+
+    if (username != "" || name != "") {
+      if (username != "" & name == "") {
+        if (result != "") {
+          res.send("success" + JSON.stringify(result));
+        }
+        else {
+          res.send("error");
+        }
+      }
+      if (username == "" & name != "") {
+        let sql1 = "select * from tblleads where txtFirstName like '" + name + "';";
+        con.query(sql1, function (err, result1) {
+          if (err) throw err;
+          console.log("Result: " + result1);
+          if (result1 != "") {
+            res.send("success" + JSON.stringify(result1));
+          }
+          else {
+            res.send("error");
+          }
+        });
+
+      }
+      if (username != "" & name != "") {
+        res.send("please use username or name");
+      }
+    }
+
+  })
+});
+
+
+app.post("/getCampaignlistwithfilter", (req, res) => {
+
+  let value_filter = req.body.value_filter;
+  let filtername = req.body.filtername;
+  let sql = "select A.id,A.refCampaignId ,B.txtCampaignName from tblleadcampaignmap A join tblcampaign B on A.refCampaignId=B.id  where " + value_filter + "='" + filtername + "' or " + value_filter + " like '" + filtername + "';";
+  con.query(sql, function (err, result) {
+    if (err) throw err;
+    console.log("Result" + result);
+    res.send(result)
+  })
+})
+
+
+app.post("/getProspectlistwithfilter", (req, res) => {
+
+  let value_filter = req.body.value_filter;
+  let filtername = req.body.filtername;
+  let sql = "select D.id,D.txtFirstName,D.txtCompanyName,D.txtEmail,B.txtConversionType from tblactivity A join tblconversiontype B on A.refConversionStatus=B.id join tblleadcampaignmap C on A.refMapid =C.id join tblleads D on C.refLeadId=D.id where " + value_filter + "='" + filtername + "' or " + value_filter + " like '" + filtername + "';";
+  con.query(sql, function (err, result) {
+    if (err) throw err;
+    console.log("Result" + result);
+    res.send(result)
+  })
+})
+app.post("/updatecampaign", (req, res) => {
+  let Campaignname = req.body.Campaignname;
+  let Startdate = req.body.Startdate;
+  let Enddate = req.body.Enddate;
+  let id = req.body.id;
+  let sql = "update tblcampaign  set txtCampaignName='" + Campaignname + "',dtStartdate='" + Startdate + "',dtEnddate='" + Enddate + "'  where id = " + id + ";"
+
+  con.query(sql, function (err, result) {
+    if (err) throw err;
+    if (Campaignname == "") {
+      res.send("Campaignname is mandatory")
+      return res
+    }
+    if (Startdate == "") {
+      res.send(" Startdate is mandatory")
+      return res
+    }
+    if (Enddate == "") {
+      res.send("Enddate  is mandatory")
+      return res
+    }
+    if (id == "") {
+      res.send("id  is mandatory")
+      return res
+    }
+    if (result == "") {
+      res.send("campaign not exists")
+      console.log("Result" + result);
+      return res
+    }
+    else {
+      res.send("Campaign updated" + JSON.stringify(result))
+
+
+    }
+
   });
+  app.post("/gettasklistwithfilter", (req, res) => {
+
+    let value_filter = req.body.value_filter;
+    let filtername = req.body.filtername;
+
+    let sql = "select A.id,B.txtActivitytype from tblactivity A join tblactivitytype B on A.refActivitytype=B.id where " + value_filter + "='" + filtername + "' or " + value_filter + " like '" + filtername + "';";
+    con.query(sql, function (err, result) {
+      if (err) throw err;
+      console.log("Result" + result);
+      res.send(result)
+    })
+  })
+
+})
+
+
+app.listen(port, () => {
+  console.log(`Example app listening on port ${port}`);
+});
 
