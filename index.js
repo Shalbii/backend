@@ -351,7 +351,7 @@ con.connect(function (err) {
       res.send("updated")
     });
   })
-//email&name
+  //email&name
   app.post("/updatesinglecampaign", (req, res) => {
     let campname = req.body.campname;
     //let email = req.body.email;
@@ -362,7 +362,7 @@ con.connect(function (err) {
       res.send("campname is mandatory");
       return res
     }
-    
+
     con.query(sql, function (err, result) {
       if (err) throw err;
       console.log(result);
@@ -385,21 +385,178 @@ con.connect(function (err) {
       if (err) throw err;
       console.log(result);
       if (result !== '') {
-        res.send("Campaign Exist" +JSON.stringify(result))
+        res.send("Campaign Exist" + JSON.stringify(result))
         return
       }
       else {
         res.send(" Campaign does not Exist")
         return
       }
-  
+
+    });
+  });
+
+  app.post("/getsingletask", (req, res) => {
+    let id = req.body.id;
+    let sql = "select tt.txtActivitytype,tc.txtConversionType from tblactivity ta join tblactivitytype tt on ta.refActivitytype=tt.id join tblconversiontype tc on ta.refConversionStatus=tc.id where ta.id = '" + id + "';"
+    con.query(sql, function (err, result) {
+      if (err) throw err;
+      console.log(result);
+      if (result !== '') {
+        res.send("Task Exist" + JSON.stringify(result))
+        return
+      }
+      else {
+        res.send(" Task does not Exist")
+        return
+      }
+
+    });
+  });
+
+  app.post('/SalespersonwiseSuccessRate', (req, res) => {
+    let sql = "SELECT tm.refLeadId,tl.txtFirstName,tc.txtConversionType, count(tl.txtFirstName) FROM tblleads tl JOIN tblleadcampaignmap tm ON tl.id = tm.refLeadId JOIN tblactivity ta ON tm.id = ta.refMapid JOIN tblconversiontype tc ON tc.id = ta.refConversionStatus WHERE tc.txtConversionType = 'Prospect ' group by tl.txtFirstName;"
+    con.query(sql, function (err, result) {
+      if (err) throw err
+      console.log(result)
+      res.send(result)
     });
   });
 
 
-  
-})
-app.listen(port, () => {
-  console.log(`Example app listening on port ${port}`);
+  app.post("/campaignwiseprospectcount", (req, res) => {
+    let sql =
+      "SELECT tl.refCampaignId CampaignId,tc.txtCampaignName CampaignName,tt.txtConversionType ConversionType,COUNT(txtCampaignName) count FROM tblcampaign tc JOIN tblleadcampaignmap tl ON tc.id = tl.refCampaignId JOIN tblactivity ta ON tl.id = ta.refMapid JOIN tblconversiontype tt ON ta.refConversionStatus = tt.id WHERE tt.txtConversionType = 'Prospect' GROUP BY tc.txtCampaignName;";
+    con.query(sql, function (err, result) {
+      if (err) throw err;
+      console.log(result);
+      res.send(result);
+    });
+  });
+
+
+
+  app.post('/leadsfunnel', (req, res) => {
+    let sql = "select count(id) leadscount from crm.tblleads union all SELECT count(d.txtConversionType) as NoOfLeads FROM crm.tblleads a JOIN crm.tblleadcampaignmap b ON a.id = b.refLeadId JOIN crm.tblactivity c ON b.id = c.refMapid JOIN crm.tblconversiontype d ON c.refConversionStatus = d.id where d.txtConversionType = 'Nurturing ' or d.txtConversionType = 'Prospect ' group by d.txtConversionType;"
+    con.query(sql, function (err, result) {
+      if (err) throw err;
+      console.log(result)
+      res.send(result)
+    });
+  });
+
+  app.post("/Managerwiseprospectcount", (req, res) => {
+    let sql = "SELECT A.txtJobTitle Jobtitle, B.txtFirstName Name, count(E.txtConversionType) as Count FROM tbljobtitle A JOIN tblusers B ON A.id = B.refJobTitle JOIN tblleadcampaignmap C ON C.refCreatedBy = B.id JOIN   tblactivity D ON D.refMapid = C.id JOIN tblconversiontype E on E.id= D.refConversionStatus where txtJobTitle='%Manager%';";
+    con.query(sql, function (err, result) {
+      if (err) throw err;
+      console.log(result);
+      res.send(result);
+    });
+  });
+
+  app.post('/prospectGrowth', (req, res) => {
+    let sql = "SELECT d.txtConversionType, COUNT(d.txtConversionType) as count FROM crm.tblleads a JOIN crm.tblleadcampaignmap b ON a.id = b.refLeadId JOIN crm.tblactivity c ON b.id = c.refMapid JOIN crm.tblconversiontype d ON c.refConversionStatus = d.id WHERE d.txtConversionType = 'Prospect';"
+    con.query(sql, function (err, result) {
+      if (err) throw err
+      console.log(result)
+      res.send(result)
+    });
+  });
+
+  app.post('/Prospectprogress', (req, res) => {
+    let sql = "select tct.txtconversiontype,tpt.txtProgresstype from tblactivity ta join tblconversiontype tct on ta.refConversionStatus=tct.id join tblprogresstype tpt on ta.refProgressStatus=tpt.id where tct.txtconversiontype='Prospect ';"
+    con.query(sql, function (err, result) {
+      if (err) throw err
+      console.log(result)
+      res.send(result)
+    });
+  });
+
+
+  app.post("/GetUserListWithFilter", (req, res) => {
+    let username = req.body.username;
+    let name = req.body.name;
+
+    let sql = "select * from tblusers where txtFirstName= '" + username + "';";
+    con.query(sql, function (err, result) {
+      if (err) throw err;
+      console.log("Result: " + result);
+
+      if (username != "" || name != "") {
+        if (username != "" && name == "") {
+          if (result != "") {
+            res.send("success" + JSON.stringify(result));
+          }
+          else {
+            res.send("error");
+          }
+        }
+        if (username == "" && name != "") {
+          let sql1 = "select * from tblusers where txtFirstName like '" + name + "';";
+          con.query(sql1, function (err, result1) {
+            if (err) throw err;
+            console.log("Result: " + result1);
+            if (result1 != "") {
+              res.send("success" + JSON.stringify(result1));
+            }
+            else {
+              res.send("error");
+            }
+          });
+
+        }
+        if (username != "" & name != "") {
+          res.send("please use username or name");
+        }
+      }
+      else {
+        res.send("username or name is mandatory ");
+      }
+
+    });
+  });
+
+  app.post("/GetLeadListWithFilter", (req, res) => {
+    let username = req.body.username;
+    let name = req.body.name;
+
+    let sql = "select * from tblleads where txtFirstName= '" + username + "';";
+    con.query(sql, function (err, result) {
+      if (err) throw err;
+      console.log("Result: " + result);
+
+      if (username != "" || name != "") {
+        if (username != "" & name == "") {
+          if (result != "") {
+            res.send("success" + JSON.stringify(result));
+          }
+          else {
+            res.send("error");
+          }
+        }
+        if (username == "" & name != "") {
+          let sql1= "select * from tblleads where txtFirstName like '" + name + "';";
+          con.query(sql1, function (err, result1) {
+            if (err) throw err;
+            console.log("Result: " + result1);
+            if (result1 != "") {
+              res.send("success" + JSON.stringify(result1));
+            }
+            else {
+              res.send("error");
+            }
+          });
+
+        }
+        if (username != "" & name != "") {
+          res.send("please use username or name");
+        }
+      }
+
+    })
+  });
 });
+  app.listen(port, () => {
+    console.log(`Example app listening on port ${port}`);
+  });
 
